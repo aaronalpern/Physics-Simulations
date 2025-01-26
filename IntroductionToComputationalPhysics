@@ -89,5 +89,18 @@ plt.show()
 2d--------------------------------------------------------------------------------------------
 
 3a--------------------------------------------------------------------------------------------
+import random
+
+def DrawCircle():
+  plt.plot([math.cos(i*np.pi/5000) for i in range(10000)], [math.sin(i*np.pi/5000) for i in range(10000)])
+
+DrawCircle()
+plt.plot([random.uniform(-1,1) for i in range(25)], [random.uniform(-1,1) for i in range(25)], 'o')
+plt.axis('scaled')
+plt.xlim(-1,1)
+plt.ylim(-1,1)
+plt.gca().get_xaxis().set_visible(False)
+plt.gca().get_yaxis().set_visible(False)
+plt.show()
 3b--------------------------------------------------------------------------------------------
 3c--------------------------------------------------------------------------------------------
