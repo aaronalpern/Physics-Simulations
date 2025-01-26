@@ -32,7 +32,6 @@ plt.yscale('log')
 plt.show()
 
 1c--------------------------------------------------------------------------------------------
-# ANSWER ME
 piList = []
 
 def calculate(n):
@@ -44,13 +43,15 @@ def calculate(n):
 
 for term in [1, 2, 3]:
   print(f"{term}, {calculate(term)}, {np.pi - calculate(term)}")
-  piList.append(np.pi - calculate(term))
-x = [1, 2, 3]
+
+piList.append(np.pi - calculate(1))
+piList.append(np.pi - calculate(2))
+x = [1, 2]
 plt.plot(x, np.abs(piList)) 
 plt.xlabel("Term")
 plt.ylabel("Difference from pi")
 plt.yscale('log')
-plt.show
+plt.show 
 2a--------------------------------------------------------------------------------------------
 2b--------------------------------------------------------------------------------------------
 2c--------------------------------------------------------------------------------------------
