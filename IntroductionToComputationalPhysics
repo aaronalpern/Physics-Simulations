@@ -68,7 +68,26 @@ DrawPolygon(5)
 plt.axis('scaled') # this makes your circle look like a circle and not an oval
 plt.show()
 2c--------------------------------------------------------------------------------------------
+def DrawPolygon(n):
+  plt.plot([math.cos(2*i*np.pi/n) for i in range(10000)],[math.sin(2*i*np.pi/n) for i in range(10000)])
+
+DrawCircle()
+DrawPolygon(5)
+plt.axis('scaled') # this makes your circle look like a circle and not an oval
+plt.show()  
+
+
+def DrawPolygon(n):
+  x, y = [math.cos(2*i*np.pi/n) for i in range(n+1)], [math.sin(2*i*np.pi/n) for i in range(n+1)]
+  return sum([((x[i]-x[i-1])**2+(y[i]-y[i-1])**2)**0.5 for i in range(n+1)]) / 2
+
+plt.plot([DrawPolygon(n) for n in range(3, 100)]) 
+plt.axhline(np.pi,linestyle='--')
+plt.xlabel("number of sides") 
+plt.ylabel("perimeter / 2")
+plt.show()  
 2d--------------------------------------------------------------------------------------------
+
 3a--------------------------------------------------------------------------------------------
 3b--------------------------------------------------------------------------------------------
 3c--------------------------------------------------------------------------------------------
