@@ -103,4 +103,36 @@ plt.gca().get_xaxis().set_visible(False)
 plt.gca().get_yaxis().set_visible(False)
 plt.show()
 3b--------------------------------------------------------------------------------------------
+# ANSWER HERE 
+import random
+
+def CreatePoints(n):
+  return [random.uniform(-1,1) for i in range(n)], [random.uniform(-1,1) for i in range(n)]
+
+
+
+
+x, y = CreatePoints(25)
+ratio = [1 if (x[i]**2 + y[i]**2) < 1 else 0 for i in range(25)]
+print("25 darts")
+print({sum(ratio)/25*4})
+
+plt.plot(x,y,'o')
+plt.plot([math.cos(i*np.pi/5000) for i in range(10000)], [math.sin(i*np.pi/5000) for i in range(10000)])
+plt.axis('scaled')
+plt.xlim(-1,1)
+plt.ylim(-1,1)
+plt.gca().get_xaxis().set_visible(False)
+plt.gca().get_yaxis().set_visible(False)
+plt.show()
+
+x, y = CreatePoints(2500)
+ratio = [1 if (x[i]**2 + y[i]**2) < 1 else 0 for i in range(2500)]
+print("2500 darts")
+print({sum(ratio)/2500*4})
+
+x, y = CreatePoints(2500000)
+ratio = [1 if (x[i]**2 + y[i]**2) < 1 else 0 for i in range(2500000)]
+print("2500000 darts")
+print({sum(ratio)/2500000*4})
 3c--------------------------------------------------------------------------------------------
