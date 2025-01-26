@@ -32,7 +32,25 @@ plt.yscale('log')
 plt.show()
 
 1c--------------------------------------------------------------------------------------------
+# ANSWER ME
+piList = []
 
+def calculate(n):
+  val = 0;
+  for i in range(n):
+    val += math.factorial(4*i) * (1103 + 26390*i) / ((math.factorial(i))**4 * 396**(4*i)) 
+  temp = 9801 / 2 / 2**0.5
+  return  temp / val
+
+for term in [1, 2, 3]:
+  print(f"{term}, {calculate(term)}, {np.pi - calculate(term)}")
+  piList.append(np.pi - calculate(term))
+x = [1, 2, 3]
+plt.plot(x, np.abs(piList)) 
+plt.xlabel("Term")
+plt.ylabel("Difference from pi")
+plt.yscale('log')
+plt.show
 2a--------------------------------------------------------------------------------------------
 2b--------------------------------------------------------------------------------------------
 2c--------------------------------------------------------------------------------------------
