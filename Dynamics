@@ -1,1 +1,142 @@
+#### ANSWER HERE 
+t   = 0    # set the initial time. 
+vel = 2.0  # throwing it into the air at 2 m/s
+pos = 1.5  #  We threw it while standing from 1.5 meters tall.
+dt  = 0.01 # We will take time steps of 0.01 seconds.
+
+
+def Step(t,pos,vel,dt):
+  new_pos = pos + vel*dt
+  new_vel = vel - 9.81*dt
+  new_t = t + dt
+  return (new_t,new_pos,new_vel)
+
+T = 0.05
+for step in range(0,int(round(T/dt))):
+  t,pos,vel=Step(t,pos,vel,dt)
+
+print("t should be 0.05,\t t="      ,round(t,4))
+print("pos should be 1.5902;\t pos=",round(pos,4))
+print("vel should be 1.51,\t vel="  ,round(vel,4))
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+t   = 0 # set t0
+dt  = 0.01 # time step 
+T = 0.05 # total time to run 
+vel = np.array([0.1,10.])  # initial velocity in m/s
+pos = np.array([0.0,0.0])  # m
+
+def Step(t, pos, vel, dt):
+    assert(type(pos)==np.ndarray) # checks to see if pos is an array 
+    new_pos = pos + vel*dt
+    new_vel = vel - np.array([0,9.81])*dt
+    new_t = t + dt
+    return (new_t,new_pos,new_vel)
+
+T=0.05
+for step in range(0,int(round(T/dt))):
+  t,pos,vel=Step(t,pos,vel,dt)
+
+print("t should be 0.05,\t t=" ,round(t,4))
+print("[x,y] should be [0.005,0.4902];\t [x,y]=" ,pos)
+print("[vx,vy] should be [0.1,9.51],\t [vx,vy]=" ,vel)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+###ANSWER HERE
+def ThrowBall(initPos,initVel,dt):
+  ts = []
+  poses = []
+  vs = []
+  t = 0
+  vel = initVel
+  pos = initPos
+  while (pos[1] >= 0):
+    poses += [[pos[0], pos[1]]]
+    vs += [[vel[0], vel[1]]]
+    ts += [t]
+    t,pos,vel=Step(t,pos,vel,dt)
+  return poses, vs, ts
+
+def Exact(initPos,initVel,ts):
+   return ([[initPos[0]+initVel[0]*t,
+            initPos[1]+initVel[1]*t-(9.81*(t**2.0))/2] for t in ts]
+          , [[initVel[0], initVel[1]-9.81*t] for t in ts])
+poses, vs, ts = ThrowBall(np.array([0,0]),np.array([5,5]), 0.05)
+eposes, evs = Exact(np.array([0,0]),np.array([5,5]), ts)
+
+print("Positions from stepped function:")
+print(np.array(poses))
+print("Positions from exact function:")
+print(np.array(eposes))
+print("Velocities from exact function:")
+print(np.array(evs))
+print("Velocities from stepped function:")
+print(np.array(vs))
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+plt.plot(ts, [pos[1] for pos in poses], label="using dt")
+plt.plot(ts, [pos[1] for pos in eposes], label="Exact Answer")
+plt.xlabel("t (s)")
+plt.ylabel("height (m)")
+plt.legend()
+plt.show()
+
+plt.plot(ts, [pos[1] for pos in vs], label="using dt")
+plt.plot(ts, [pos[1] for pos in evs], label="Exact Answer")
+plt.xlabel("t (s)")
+plt.ylabel("velocity (m/s)")
+plt.legend()
+plt.show()
+
+plt.plot([pos[0] for pos in poses],
+ [pos[1] for pos in poses], label="using dt")
+plt.plot([pos[0] for pos in eposes],
+ [pos[1] for pos in eposes], label="Exact Answer")
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.legend()
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+from matplotlib import animation
+from IPython.display import HTML
+
+positions = np.array(poses)
+
+def animateMe(positions,fullLine=True):
+    # First set up the figure, the axis, and the plot element we want to animate
+    fig = plt.figure();
+    x_min=np.min(positions[:,0])
+    x_max=np.max(positions[:,0])*1.1
+    y_min=np.min(positions[:,1])
+    y_max=np.max(positions[:,1])*1.1
+
+    ax = plt.axes(xlim=(x_min, x_max), ylim=(y_min, y_max));
+    #line, = ax.plot([], [], lw=2);
+    line, = ax.plot([], [],'bo', ms=10);
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    plt.close(fig)
+    # initialization function: plot the background of each frame
+    def init():
+        line.set_data([], [])
+        return line,
+
+    # animation function.  This is called sequentially
+    def animate(i):
+        x = positions[:,0]
+        y = positions[:,1]
+        if fullLine:
+            line.set_data(positions[0:i,0], positions[0:i,1])
+        else:
+            line.set_data(positions[i,0], positions[i,1])
+#        line.set_markersize(10)
+        return line,
+
+    # call the animator.  blit=True means only re-draw the parts that have changed.
+    anim = animation.FuncAnimation(fig, animate, init_func=init,
+                                   frames=len(positions), interval=20, 
+                                   blit=True,repeat=False);
+    return anim
+
+anim=animateMe(positions,True)
+HTML(anim.to_jshtml())
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
