@@ -139,4 +139,341 @@ def animateMe(positions,fullLine=True):
 anim=animateMe(positions,True)
 HTML(anim.to_jshtml())
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+def PlotErrorWithTime(ts,integratorYs,exactYs):
+  plt.plot(ts,
+   [integratorYs[i]-exactYs[i] for i in range(len(integratorYs))])
+  plt.xlabel("time in seconds")
+  plt.ylabel("Difference in meters")
+  plt.show()
 
+PlotErrorWithTime(ts, positions[:,1], [pos[1] for pos in eposes])
+
+def FindIndex(target, ts):
+  for i in range(len(ts)):
+    if abs(ts[i+1] - target) >= abs(ts[i] - target):
+      return i
+
+def PlotErrorWithdt():
+  error = []
+  dtseconds = [0.32,0.16,0.08,0.04,0.02,0.01,0.005]
+  for dt in dtseconds:
+    poses, vs, ts = ThrowBall(np.array([0,0]),np.array([50,50]), dt)
+    eposes, evs = Exact(np.array([0,0]),np.array([50,50]), ts)
+    index=FindIndex(1.28,ts)
+    error += [ poses[index][1] - eposes[index][1] ]
+  plt.plot(dtseconds, error)
+  plt.xlabel("time in seconds")
+  plt.ylabel("Difference in meters")
+  plt.show()
+
+PlotErrorWithdt()
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+dt = 0.001
+pos, vs, ts =  ThrowBall(np.array([0,0]),np.array([0.1,10]), dt)
+energy = []
+def Energy(pos, vs, ts):
+  for i in range(len(ts)):
+    e = 0.5*(vs[i][0]**2 + vs[i][1]**2) + 9.81*pos[i][1]
+    energy.append(e)
+    if (i % 150 == 0):
+      print(e)
+    
+
+print("Random sample of energy:")
+Energy(pos, vs, ts)
+plt.plot(ts, energy)
+plt.xlabel("Time in seconds")
+plt.ylabel("Energy in Joules")
+plt.show()
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+resetMe()
+### ANSWER HERE
+def F(vel,params):
+  return np.array([-params['b']*vel[0],
+                   -params['b']*vel[1]-9.8*params['m']])
+
+def ThrowBall(params):
+  ts = []
+  poses = []
+  vs = []
+  t = 0
+  vel = params['initVel']
+  pos = params['initPos']
+  while pos[1] >= 0:
+      poses.append([pos[0], pos[1]])
+      vs.append([vel[0], vel[1]])
+      ts.append(t)
+        
+      t += params['dt']
+      pos = pos + vel * params['dt']
+      vel = vel + F(vel, params) / params['m'] * params['dt']
+  return poses, vs, ts
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+params ={ #another way of writing a dictionary
+'b'  :0.1,
+"m"  :1.0,
+"initPos" : np.array([0.0,0.0]),
+"initVel" : np.array([0.1,10.0]),
+"dt" : 0.01
+        }
+
+aposes, avs, ats = ThrowBall(params)
+params['b'] = 0.0
+poses, vs, ts = ThrowBall(params)
+
+plt.plot(ats, [pos[1] for pos in aposes], label = 'Air resistance')
+plt.plot(ts, [pos[1] for pos in poses], label = 'Vacuum')
+plt.xlabel("Time (s)")
+plt.ylabel("Height (m)")
+plt.legend()
+plt.show()
+
+plt.plot([pos[0] for pos in aposes],
+ [pos[1] for pos in aposes], label = 'Air resistance')
+plt.plot([pos[0] for pos in poses],
+ [pos[1] for pos in poses], label = 'Vacuum')
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.legend()
+plt.show() 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+params ={ #another way of writing a dictionary
+'b'  :0.3,
+"m"  :1.0,
+"initPos" : np.array([0.0,1000.0]),
+"initVel" : np.array([0.0,0.0]),
+"dt" : 0.01
+        }
+
+aposes, avs, ats = ThrowBall(params)
+params['b'] = 0.0
+poses, vs, ts = ThrowBall(params)
+
+plt.plot(ats, [pos[1] for pos in aposes], label = 'Air resistance')
+plt.plot(ts, [pos[1] for pos in poses], label = 'Vacuum')
+plt.xlabel("Time (s)")
+plt.ylabel("Height (m)")
+plt.legend()
+plt.show()
+
+plt.plot(ats, [vel[1] for vel in avs], label = 'Air resistance')
+plt.plot(ts, [vel[1] for vel in vs], label = 'Vacuum')
+plt.xlabel("Time (s)")
+plt.ylabel("vy (m/s)")
+plt.legend()
+plt.show()
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+def myTarget(v,params):
+  throwparams = {
+      'b'  :params['b'],
+      "m"  :params['m'],
+      "initPos" : np.array([0,0]),
+      "initVel" : v,
+      "dt" : params['dt']
+  }
+  poses, vs, ts = ThrowBall(throwparams)
+  return abs(poses[-1][0] - 10)
+
+params = {
+    'b' : 3,
+    'm' : 1,
+    'initPos' : np.array([0,0]),
+    'dt': 0.01,
+    "initVel" : np.array([0,0])
+}
+
+ans=scipy.optimize.minimize(myTarget,
+                            params['initVel'],
+                            args=params,
+                            method='Nelder-Mead',
+                            options={'disp': True})
+print(ans.x)
+params['initVel'] = ans.x
+poses, vs, ts = ThrowBall(params)
+poses = np.array(poses)
+vs = np.array(vs)
+ts = np.array(ts)
+
+
+plt.figure(figsize=(8, 5))
+plt.plot(poses[:, 0], poses[:, 1], label="Optimized Trajectory")
+plt.scatter([10], [0], color='red', marker='x', s=100, label="Target (10,0)")
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.title("Projectile Motion with Air Resistance")
+plt.legend()
+plt.grid()
+plt.show()
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#ANSWER HERE
+def F(vel,params):
+  return np.array([-params['b']*vel[0],
+                   -params['b']*vel[1]-9.8*params['m']])
+
+
+def ThrowBallMid(params):
+  ts = []
+  poses = []
+  vs = []
+  t = 0
+  vel = params['initVel']
+  pos = params['initPos']
+  while pos[1] >= 0:
+      poses.append([pos[0], pos[1]])
+      vs.append([vel[0], vel[1]])
+      ts.append(t)
+        
+      t += params['dt']
+      pos = pos + vel * params['dt'] / 2
+      vel = vel + F(vel, params) / params['m'] * params['dt'] / 2
+  return poses, vs, ts
+
+
+
+#Check Results
+params ={ 
+'b'  :0.1,
+"m"  :1.0,
+"initPos" : np.array([0.0,0.0]),
+"initVel" : np.array([0.1,10.0]),
+"dt" : 0.01
+        }
+
+aposes, avs, ats = ThrowBallMid(params)
+params['b'] = 0.0
+poses, vs, ts = ThrowBallMid(params)
+
+plt.plot(ats, [pos[1] for pos in aposes], label = 'Air resistance')
+plt.plot(ts, [pos[1] for pos in poses], label = 'Vacuum')
+plt.xlabel("Time (s)")
+plt.ylabel("Height (m)")
+plt.legend()
+plt.show()
+
+plt.plot([pos[0] for pos in aposes],
+ [pos[1] for pos in aposes], label = 'Air resistance')
+plt.plot([pos[0] for pos in poses],
+ [pos[1] for pos in poses], label = 'Vacuum')
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.legend()
+plt.show()
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWERE HERE
+def FindIndex(target, ts):
+  for i in range(len(ts)):
+    if abs(ts[i+1] - target) >= abs(ts[i] - target):
+      return i
+
+def PlotErrorWithdt():
+  error = []
+  dts = [0.32,0.16,0.08,0.04,0.02,0.01]
+  params= {
+      'b' : 0.1,
+      "m" : 1.0,
+      "initVel" : np.array([0.0,10.0]),
+      'initPos' : np.array([0.0,0.0]),
+      'dt' : 0.00001
+  }
+  eposes, evs, ets = ThrowBallMid(params)
+  for dt in dts:
+    params['dt'] = dt
+    poses, vs, ts = ThrowBallMid(params)
+    index=FindIndex(1.28,ts)
+    eindex = FindIndex(1.28,ets)
+    error += [ abs(poses[index][1] - eposes[eindex][1]) ]
+  plt.plot(dts, error, 'o')
+  plt.xlabel("dt (s)")
+  plt.ylabel("Error (m)")
+  plt.show()
+
+  line = np.polyfit(np.log(dts),np.log(error),1)
+  print(f"Alpha is equal to: {line[0]}")
+
+  plt.plot(dts,error,'o')
+  plt.xscale('log')
+  plt.yscale('log')
+  plt.xlabel("log(dt)")
+  plt.ylabel("log(Error)")
+  plt.show()
+
+PlotErrorWithdt()
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def ThrowBallRK4(params):
+    """Simulates projectile motion using a fourth-order Runge-Kutta (RK4) integrator."""
+    ts = []
+    poses = []
+    vs = []
+    t = 0
+    vel = params['initVel'].copy()
+    pos = params['initPos'].copy()
+
+    while pos[1] >= 0:  # Stop when the ball hits the ground
+        poses.append([pos[0], pos[1]])
+        vs.append([vel[0], vel[1]])
+        ts.append(t)
+
+        # Compute RK4 coefficients
+        k1v = F(vel, params)
+        k1p = vel
+
+        k2v = F(vel + (params['dt'] / 2) * k1v, params)
+        k2p = vel + (params['dt'] / 2) * k1p
+
+        k3v = F(vel + (params['dt'] / 2) * k2v, params)
+        k3p = vel + (params['dt'] / 2) * k2p
+
+        k4v = F(vel + params['dt'] * k3v, params)
+        k4p = vel + params['dt'] * k3p
+
+        # Update velocity and position using RK4 formula
+        vel = vel + (params['dt'] / 6) * (k1v + 2 * k2v + 2 * k3v + k4v)
+        pos = pos + (params['dt'] / 6) * (k1p + 2 * k2p + 2 * k3p + k4p)
+
+        # Update time step
+        t += params['dt']
+    
+    return poses, vs, ts
+
+# Check Results
+params = {  
+    'b': 0.1,
+    "m": 1.0,
+    "initPos": np.array([0.0, 0.0]),
+    "initVel": np.array([0.1, 10.0]),
+    "dt": 0.01
+}
+
+# Simulate using RK4
+aposes, avs, ats = ThrowBallRK4(params)
+
+# Simulate in vacuum 
+params['b'] = 0.0
+poses, vs, ts = ThrowBallRK4(params)
+
+# Plot height vs time
+plt.figure(figsize=(8, 5))
+plt.plot(ats, [pos[1] for pos in aposes], label='Air resistance (RK4)')
+plt.plot(ts, [pos[1] for pos in poses], label='Vacuum (RK4)')
+plt.xlabel("Time (s)")
+plt.ylabel("Height (m)")
+plt.legend()
+plt.grid()
+plt.show()
+
+# Plot trajectory
+plt.figure(figsize=(8, 5))
+plt.plot([pos[0] for pos in aposes], [pos[1] for pos in aposes], label='Air resistance (RK4)')
+plt.plot([pos[0] for pos in poses], [pos[1] for pos in poses], label='Vacuum (RK4)')
+plt.xlabel("x (m)")
+plt.ylabel("y (m)")
+plt.legend()
+plt.grid()
+plt.show()
