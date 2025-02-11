@@ -1,0 +1,137 @@
+### ANSWER HERE
+def A(pos):
+    r = np.linalg.norm(pos)  # Magnitude of position vector
+    return -SolarSystemParameters['G'] * SolarSystemParameters["SunMass"] * pos / r**3
+
+def Orbit(params):
+  ts = []
+  poses = []
+  vs = []
+  t = 0
+  vel = params['initVel']
+  pos = params['initPos']  
+  while t <= params['T'] and (np.linalg.norm(pos) >= SolarSystemParameters['SunRadius']):
+    # Storing position and velocity
+    poses.append(pos.copy())
+    vs.append(vel.copy())
+    ts.append(t)
+        
+    # Midpoint method
+    posmid = pos + 0.5 * vel * params['dt']
+    velmid = vel + 0.5 * A(pos) * params['dt']
+        
+    # Full step update
+    t += params['dt']
+    pos += velmid * params['dt']
+    vel += A(posmid) * params['dt']
+   
+  return np.array(poses), np.array(vs), np.array(ts)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+EarthParams = {
+    'initPos' : np.array([SolarSystemParameters['EarthOrbitRadius'], 0]),
+    'initVel' : np.array([0,SolarSystemParameters['EarthOrbitVelocity']]),
+    'dt' : 3600,
+    'T' : 3600*24*365.25
+}
+
+eposes, evs, ets = Orbit(EarthParams)
+eposes = np.array(eposes)
+plt.plot(eposes[:, 0], eposes[:, 1], label="Earth's Orbit")
+plt.axis('equal')
+plt.scatter(0, 0, color='orange', s=800, marker='o', label='Sun')  # Sun at the center
+plt.xlabel("X Position (m)")
+plt.ylabel("Y Position (m)")
+plt.legend(loc='upper right')
+plt.title("Earth's Orbit Around the Sun")
+plt.grid(True)
+plt.show()
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+from matplotlib import animation
+from IPython.display import HTML
+
+def animateMe(positions,fullLine=True):
+    # First set up the figure, the axis, and the plot element we want to animate
+    fig = plt.figure();
+    x_min=np.min(positions[:,0])
+    x_max=np.max(positions[:,0])*1.1
+    y_min=np.min(positions[:,1])
+    y_max=np.max(positions[:,1])*1.1
+
+    ax = plt.axes(xlim=(x_min, x_max), ylim=(y_min, y_max));
+    #line, = ax.plot([], [], lw=2);
+    line, = ax.plot([], [],'bo', ms=10);
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    plt.axis('scaled')
+    plt.close(fig)
+    # initialization function: plot the background of each frame
+    def init():
+        line.set_data([], [])
+        return line,
+
+    # animation function.  This is called sequentially
+    def animate(i):
+        x = positions[:,0]
+        y = positions[:,1]
+        if fullLine:
+            line.set_data(positions[0:i,0], positions[0:i,1])
+        else:
+            line.set_data(positions[i,0], positions[i,1])
+#        line.set_markersize(10)
+        return line,
+
+    # call the animator.  blit=True means only re-draw the parts that have changed.
+    anim = animation.FuncAnimation(fig, animate, init_func=init,
+                                   frames=len(positions), interval=20,
+                                   blit=True,repeat=False);
+    return anim
+steps=np.shape(eposes)[0]
+
+anim=animateMe(eposes[::steps//100],True)
+HTML(anim.to_jshtml())
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+G = 6.67430e-11  # Gravitational constant (m^3 kg^-1 s^-2)
+EarthMass = 5.972e24  # kg
+EarthRadius = 6.371e6  # m
+GeoPeriod = 24 * 3600  # One day in seconds
+
+GeoRadius = ((G * EarthMass * GeoPeriod**2) / (4 * np.pi**2))**(1/3)
+GeoAltitude = GeoRadius - EarthRadius  
+GeoVelocity = np.sqrt(G * EarthMass / GeoRadius)  
+
+# Define simulation parameters
+SatelliteParams = {
+    'initPos': np.array([GeoRadius, 0]),  
+    'initVel': np.array([0, GeoVelocity]),  
+    'dt': 1,  
+    'T': GeoPeriod  
+}
+
+# Run orbit simulation
+geo_positions, geo_velocities, geo_times = Orbit(SatelliteParams)
+geo_positions = np.array(geo_positions)
+print(f"Geosynchronous Orbit Altitude: {GeoAltitude/1000:.2f} km")
+# Plot the geosynchronous orbit
+plt.figure(figsize=(6, 6))
+plt.plot(geo_positions[:, 0], geo_positions[:, 1], label="Satellite Orbit")
+plt.scatter(0, 0, color='blue', s=300, marker='o', label='Earth')  # Earth at center
+plt.axis('equal')
+plt.xlabel("X Position (m)")
+plt.ylabel("Y Position (m)")
+plt.legend(loc="upper right")
+plt.title("Geosynchronous Satellite Orbit")
+plt.grid(True)
+plt.show()
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
