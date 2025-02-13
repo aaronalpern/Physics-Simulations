@@ -125,13 +125,142 @@ plt.grid(True)
 plt.show()
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+def TriangleArea(pos1, pos2):
+  return 0.5 * abs( pos1[0]*pos2[1] - pos2[0]*pos1[1])
+
+EarthParams = {
+    'initPos' : np.array([SolarSystemParameters['EarthOrbitRadius'], 0]),
+    'initVel' : np.array([0,SolarSystemParameters['EarthOrbitVelocity']]),
+    'dt' : 3600,
+    'T' : 3600*24*365
+}
+
+eposes, evs, ets = Orbit(EarthParams)
+
+area = np.cumsum([TriangleArea(eposes[i-1],eposes[i])
+for i in range(len(eposes))])
+
+plt.plot(np.array(eposes)[:,0],np.array(eposes)[:,1])
+plt.axis("scaled")
+
+print(f"0.2T to 0.3T: {-1 * area[int(.2*24*365)] + area[int(0.3*24*365)]}")
+print(f"0.6T to 0.7T: {-1 * area[int(.6*24*365)] + area[int(0.7*24*365)]}")
+
+plt.fill([pos[0] for pos in eposes[int(.2*24*365):int(0.3*24*365)]] +
+ [0],[pos[1] for pos in eposes[int(.2*24*365):int(0.3*24*365)]] + [0])
+plt.fill([pos[0] for pos in eposes[int(.6*24*365):int(0.7*24*365)]] +
+ [0],[pos[1] for pos in eposes[int(.6*24*365):int(0.7*24*365)]] + [0])
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+MercuryParams = {
+    'initPos' : np.array([0.0,4.60012e10]),
+    'initVel' : np.array([5.898e4,0.0]),
+    'T' : 60*60*24*88*1.1,
+    'dt' : 60
+}
 
+mposes, mevs, mts = Orbit(MercuryParams)
+
+radii = [(pos[0]**2 + pos[1]**2)**0.5 for pos in mposes[1:]]
+index = radii.index(min(radii))
+print(index)
+print(np.array([['x','y','r']]+[[mposes[i+index-2][0], mposes[i+index-2][1],
+ (mposes[i+index-2][0]**2 + mposes[i+index-2][1]**2)**0.5] for i in range(6)]))
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+pos = np.array(mposes)
+x = np.float64(pos[index-4:index+7,0])
+y = np.float64(pos[index-4:index+7,1])
 
+line = np.polyfit(x,y,2)
+
+xs = np.linspace(x[0], x[-1], 100000)
+ys = np.array([line[0]*a**2 + line[1]*a + line[2] for a in xs])
+
+plt.plot(x,y)
+plt.plot(xs, ys)
+plt.show()
+
+closestX = xs[np.argmax(ys)]
+closestY = np.max(ys)
+print(f"Closest Distance: {(closestX**2 + closestY**2)**0.5}")
+print(f"Angle: {np.arctan(closestX / closestY)}")
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### ANSWER HERE
+def RelA(pos):
+  r = (pos[1]**2 + pos[0]**2)**0.5
+  cos = pos[0] / r
+  sin = pos[1] / r
+  force = -1*(SolarSystemParameters['G']*SolarSystemParameters["SunMass"]
+              /r**2 + 3.2610353e34/r**4)
+  return np.array([cos*force, sin*force])
 
+def RelOrbit(params):
+  ts = []
+  poses = []
+  vs = []
+  t = 0
+  vel = params['initVel']
+  pos = params['initPos']
+  while (t <= params['T'] and
+   ((pos[0]**2 + pos[1]**2) >=
+    SolarSystemParameters['SunRadius']**2)):
+    poses += [[pos[0], pos[1]]]
+    vs += [[vel[0], vel[1]]]
+    ts += [t]
+    posmid = pos + 0.5*vel*params['dt']
+    velmid = vel + RelA(pos)*params['dt']/2
+    tmid = t + params['dt']/2
+    t,pos,vel=t+params['dt'],pos+velmid*params['dt'], vel
+    + RelA(posmid)*params['dt']
+  return poses, vs, ts
+
+MercuryParams = {
+    'initPos' : np.array([0.0,4.60012e10]),
+    'initVel' : np.array([5.898e4,0.0]),
+    'T' : 60*60*24*88*1.1,
+    'dt' : 60
+}
+
+mposes, mevs, mts = RelOrbit(MercuryParams)
+
+radii = [(pos[0]**2 + pos[1]**2)**0.5 for pos in mposes[1:]]
+index = radii.index(min(radii))
+print(index)
+print(np.array([['x','y','r']]+[[mposes[i+index-2][0],
+                                 mposes[i+index-2][1],
+ (mposes[i+index-2][0]**2 +
+  mposes[i+index-2][1]**2)**0.5] for i in range(6)]))
+
+pos = np.array(mposes)
+x = np.float64(pos[index:index+7,0])
+y = np.float64(pos[index:index+7,1])
+
+line = np.polyfit(x,y,2)
+
+xs = np.linspace(x[0], x[-1], 100000)
+ys = np.array([line[0]*a**2 + line[1]*a + line[2] for a in xs])
+
+plt.plot(x,y)
+plt.plot(xs, ys)
+plt.show()
+
+closestX = xs[np.argmax(ys)]
+closestY = np.max(ys)
+print(f"Closest Distance: {(closestX**2 + closestY**2)**0.5}")
+print(f"Angle: {np.arctan(closestX / closestY)}")
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
+def Transfer(pos1, pos2, T):
+    pos1, pos2 = np.array(pos1), np.array(pos2)
+    # Compute velocity needed for direct transfer
+    velocity = (pos2 - pos1) / T
+    return velocity
 
+pos1 = np.array([15e11, 11111111111110, 0]) 
+pos2 = np.array([2.28e11, 0, -9999999999])
+T = 30 * 24 * 3600 
+required_velocity = Transfer(pos1, pos2, T)
+print(f"Required Velocity: {required_velocity} m/s")
+print("This will surely depend on what cordinate system you are using, but this is just my implementation using x,y,z")
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
