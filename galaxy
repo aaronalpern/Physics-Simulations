@@ -1,0 +1,57 @@
+##
+from typing import NamedTuple
+import jax.numpy as jnp
+
+class Params(NamedTuple):
+    W1: jnp.ndarray  # Shape: (d, 4761)
+    b1: jnp.ndarray  # Shape: (d,)
+    W2: jnp.ndarray  # Shape: (5, d)
+    b2: jnp.ndarray  # Shape: (5,)
+
+
+def update_params(p: Params, image: jnp.ndarray, label: jnp.ndarray, lr: float = 0.001) -> Params:
+    grads = jax.grad(loss)(p, image, label)
+    # Create a new Params instance with updated parameters.
+    new_p = Params(
+        W1 = p.W1 - lr * grads.W1,
+        b1 = p.b1 - lr * grads.b1,
+        W2 = p.W2 - lr * grads.W2,
+        b2 = p.b2 - lr * grads.b2
+    )
+    return new_p
+
+# --- Training loop for Part D ---
+
+# Assume train_images, train_labels, test_images, test_labels are already defined
+# and have been reshaped/normalized (each image is a vector of length 4761).
+
+import numpy as np
+
+d = 100
+input_dim = 69 * 69 * 1  # 4761
+
+# Initialize parameters using JAX random (or convert from NumPy)
+key = jax.random.PRNGKey(12423)
+params = Params(
+    W1 = 0.1 * jax.random.normal(key, (d, input_dim)),
+    b1 = jnp.zeros((d,)),
+    W2 = 0.1 * jax.random.normal(key, (5, d)),
+    b2 = jnp.zeros((5,))
+)
+
+num_checkpoints = 70       # e.g., check every 2000 steps for 50 checkpoints.
+steps_per_checkpoint = 2000
+accuracy_history = []
+
+for i in range(num_checkpoints):
+    for j in range(steps_per_checkpoint):
+        # Randomly select one training example.
+        idx = np.random.randint(0, len(train_images))
+        image = train_images[idx]
+        label = train_labels[idx]
+        # Update parameters using the single example.
+        params = update_params(params, image, label, lr=0.001)
+    # Evaluate accuracy on the test set.
+    test_acc = fractionCorrect(params, test_images, test_labels)
+    print(f"After {(i+1)*steps_per_checkpoint} steps, test accuracy = {test_acc:.3f}")
+    accuracy_history.append(test_acc)
