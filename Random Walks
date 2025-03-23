@@ -1,0 +1,581 @@
+1a) 
+
+### Answer Here
+def RandomWalk(NumSteps, sigma):
+  walk = np.empty(NumSteps)
+  walk[0] = 0
+  for i in range(1, NumSteps):
+        walk[i] = walk[i - 1] + sigma * np.random.randn()
+  return np.array(walk)
+
+
+walks=[]
+for walk in range(0,10):
+    walks.append(RandomWalk(1000,6))
+walks=np.array(walks)
+import matplotlib.pyplot as plt
+
+for i in range(10):
+    plt.plot(walks[i])
+plt.title("10 Random Walks (σ=6)")
+plt.xlabel("Time Step")
+plt.ylabel("Position")
+plt.grid(True)
+plt.show()
+
+Animate1D(walks)
+
+----------------------------------------------------------------------------------------------------
+1b)
+
+# Parameters
+NumSteps = 1000
+NumWalks = 10000
+sigma = 6
+
+# Generate all random steps at once (shape: NumWalks x NumSteps)
+steps = sigma * np.random.randn(NumWalks, NumSteps)
+
+# Insert initial position x0 = 0 at time t=0
+walks = np.cumsum(steps, axis=1)
+walks = np.hstack((np.zeros((NumWalks, 1)), walks))  # Add initial position
+
+# Compute averages across all walks at each time step
+avg_position = np.mean(walks, axis=0)
+mean_abs_dev = np.mean(np.abs(walks), axis=0)
+std_dev = np.std(walks, axis=0)
+
+# --- Plot 1: Averages ---
+plt.figure(figsize=(10, 6))
+plt.plot(avg_position, label='Average Position ⟨xₜ⟩')
+plt.plot(mean_abs_dev, label='Mean Abs Dev ⟨|xₜ|⟩')
+plt.plot(std_dev, label='Standard Deviation σₜ')
+plt.legend()
+plt.title('Random Walk Averages Over 10,000 Walks')
+plt.xlabel('Time Step (t)')
+plt.ylabel('Distance')
+plt.grid(True)
+plt.show()
+
+# --- Plot 2: Log-Log Plot of Standard Deviation ---
+time = np.arange(1, NumSteps + 1)  # skip t = 0
+log_t = np.log(time)
+log_std = np.log(std_dev[1:])     # skip std at t = 0
+
+# Fit line to log-log data
+slope, intercept = np.polyfit(log_t, log_std, 1)
+
+plt.figure(figsize=(8, 5))
+plt.plot(log_t, log_std, label='log(σₜ)')
+plt.plot(log_t, slope * log_t + intercept, 'r--', label=f'Fit: slope = {slope:.3f}')
+plt.title('Log-Log Plot of Standard Deviation vs Time')
+plt.xlabel('log(t)')
+plt.ylabel('log(σₜ)')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+print(f"Fitted slope (α) ≈ {slope:.3f}")
+
+
+----------------------------------------------------------------------------------------------------
+1c)
+# Generate 10 random walks
+walks = []
+for _ in range(10):
+    walks.append(RandomWalk(1000, 6))
+walks = np.array(walks)
+
+# Animate with histogram showing the evolving distribution
+Animate1D(walks, make_hist=True)
+
+### Answer Here
+walks = []
+for _ in range(1000):
+    walks.append(RandomWalk(1000, 6))
+walks = np.array(walks)
+
+# Animate with histogram showing the evolving distribution
+Animate1D(walks, make_hist=True)
+
+# Parameters
+NumSteps = 500
+NumWalks = 100000
+sigma = 6
+
+# Generate all steps at once: shape (NumWalks, NumSteps)
+steps = sigma * np.random.randn(NumWalks, NumSteps)
+
+# Compute the cumulative sum to get position at each time step
+walks = np.cumsum(steps, axis=1)
+
+# Add x=0 at t=0
+walks = np.hstack((np.zeros((NumWalks, 1)), walks))
+
+# Select the time steps to inspect
+time_steps = [2, 10, 100, 500]
+
+# Plot histograms
+plt.figure(figsize=(10, 6))
+for t in time_steps:
+    plt.hist(walks[:, t], bins=50, density=True, alpha=0.5, label=f't={t}')
+
+plt.title('Distribution of Random Walks at Different Time Steps')
+plt.xlabel('Position')
+plt.ylabel('Probability Density')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+### Answer Here
+# Histogram of 100,000 walkers at step 100
+walks_step100 = walks[:, 100]
+
+values, edges, _ = plt.hist(walks_step100, bins=50, density=True)
+delta_x = edges[1] - edges[0]
+plt.close()
+
+center = (edges[:-1] + edges[1:]) / 2.
+
+# Compute mean (mu) and second moment (mu_2) via discrete integration
+mu = np.sum(center * values * delta_x)
+mu2 = np.sum(center**2 * values * delta_x)
+
+# Compute standard deviation from the histogram
+sigma_from_hist = np.sqrt(mu2 - mu**2)
+
+# Compare with numpy standard deviation
+sigma_direct = np.std(walks_step100)
+
+print(f"σ from histogram: {sigma_from_hist:.4f}")
+print(f"σ from np.std:    {sigma_direct:.4f}")
+
+----------------------------------------------------------------------------------------------------
+### Answer Here
+# Parameters for our initial Gaussian
+size = 4000       
+dx = 0.1           
+points = np.arange(size)
+sigma = 6       
+
+# Create spatial grid centered at 0
+xs = dx * (points - size // 2)
+rho = np.exp(-xs**2 / (2 * sigma**2))
+rho /= np.sum(rho) * dx
+
+# Plot the initial distribution
+plt.figure(figsize=(8, 5))
+plt.plot(xs, rho)
+plt.title('Initial Gaussian Distribution ρ(x, t=1)')
+plt.xlabel('x')
+plt.ylabel('ρ(x)')
+plt.grid(True)
+plt.show()
+
+
+----------------------------------------------------------------------------------------------------
+### Answer Here
+def Step(rho, D, dt, dx):
+    # Compute second spatial derivative using finite difference
+    laplacian = (np.roll(rho, -1) + np.roll(rho, 1) - 2 * rho) / dx**2
+    # Apply the diffusion equation to evolve rho forward one time step
+    return rho + D * laplacian * dt
+
+
+# Initialize
+size = 4000
+dx = 0.1
+dt = dx**2 / 100
+D = 6**2 / 2  # D = a^2 / 2
+
+points = np.arange(size)
+xs = dx * (points - size // 2)
+
+# Initial Gaussian distribution
+sigma = 6
+rho = np.exp(-xs**2 / (2 * sigma**2))
+rho /= np.sum(rho) * dx
+
+# Evolve to t = 2.0, 10.0, 30.0
+times = [2.0, 10.0, 30.0]
+rhos_at_times = {}
+
+rho_now = rho.copy()
+steps_total = int(max(times) / dt)
+
+for step in range(steps_total + 1):
+    t = step * dt
+    if np.isclose(t, times[0], atol=dt):
+        rhos_at_times[times[0]] = rho_now.copy()
+    if np.isclose(t, times[1], atol=dt):
+        rhos_at_times[times[1]] = rho_now.copy()
+    if np.isclose(t, times[2], atol=dt):
+        rhos_at_times[times[2]] = rho_now.copy()
+    rho_now = Step(rho_now, D, dt, dx)
+
+plt.figure(figsize=(10, 6))
+for t in times:
+    plt.plot(xs, rhos_at_times[t], label=f"t = {t}")
+    
+plt.title("Deterministic Diffusion of Initial Distribution")
+plt.xlabel("x")
+plt.ylabel("ρ(x, t)")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+----------------------------------------------------------------------------------------------------
+
+### Answer Here
+# Parameters
+num_walks = 5
+num_steps = 5000
+sigma = 6
+walks_x = []
+walks_y = []
+
+for _ in range(num_walks):
+    # Generate steps in x and y (Gaussian with std dev = sigma)
+    steps_x = sigma * np.random.randn(num_steps)
+    steps_y = sigma * np.random.randn(num_steps)
+
+    # Cumulative sum to get position at each step
+    walk_x = np.cumsum(steps_x)
+    walk_y = np.cumsum(steps_y)
+
+    # Start at origin
+    walk_x = np.insert(walk_x, 0, 0)
+    walk_y = np.insert(walk_y, 0, 0)
+
+    walks_x.append(walk_x)
+    walks_y.append(walk_y)
+
+# Plotting y vs x
+plt.figure(figsize=(8, 8))
+for i in range(num_walks):
+    plt.plot(walks_x[i], walks_y[i], label=f'Walk {i+1}')
+    
+plt.title('2D Gaussian Random Walks (σ=6)')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.axis('equal')
+plt.grid(True)
+plt.legend()
+plt.show()
+
+
+----------------------------------------------------------------------------------------------------
+
+### Answer Here
+num_steps = 128000
+sigma = 6
+
+# Generate 2D random walk
+steps_x = sigma * np.random.randn(num_steps)
+steps_y = sigma * np.random.randn(num_steps)
+
+walk_x = np.cumsum(steps_x)
+walk_y = np.cumsum(steps_y)
+
+# Start at origin
+walk_x = np.insert(walk_x, 0, 0)
+walk_y = np.insert(walk_y, 0, 0)
+
+# Define zoom levels and scaling
+fractions = [1, 1/2, 1/4, 1/8, 1/16, 1/32]
+
+plt.figure(figsize=(15, 12))
+
+for i, frac in enumerate(fractions):
+    n = int((num_steps + 1) * frac)  # +1 because we inserted 0 at the beginning
+    scale = int(1 / frac)
+
+    plt.subplot(3, 2, i+1)
+    plt.plot(walk_x[:n] * scale, walk_y[:n] * scale)
+    plt.title(f'First {int(frac*100)}% of Walk (Scaled by {scale}×)')
+    plt.axis('equal')
+    plt.xticks([])
+    plt.yticks([])
+    plt.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+----------------------------------------------------------------------------------------------------
+#Answer
+# Parameters
+num_walks = 1000
+num_steps = 1000
+sigma = 6
+
+# Generate steps for all walks at once (shape: [num_walks, num_steps])
+steps_x = sigma * np.random.randn(num_walks, num_steps)
+steps_y = sigma * np.random.randn(num_walks, num_steps)
+
+# Compute positions (cumulative sum)
+walks_x = np.cumsum(steps_x, axis=1)
+walks_y = np.cumsum(steps_y, axis=1)
+
+# Add initial position at origin (x=0, y=0) at time t=0
+walks_x = np.hstack((np.zeros((num_walks, 1)), walks_x))
+walks_y = np.hstack((np.zeros((num_walks, 1)), walks_y))
+
+# Compute radial displacement r = sqrt(x^2 + y^2) for each walk at each step
+r = np.sqrt(walks_x**2 + walks_y**2)
+
+# Compute average displacement over all walks at each time step
+avg_displacement = np.mean(r, axis=0)
+
+# Time array
+time = np.arange(num_steps + 1)
+
+# --- Plot 1: Average displacement vs time ---
+plt.figure(figsize=(8, 5))
+plt.plot(time, avg_displacement, label='⟨σ⟩ in 2D')
+plt.xlabel("Time Step")
+plt.ylabel("Average Displacement ⟨σ⟩")
+plt.title("Average Displacement Over Time (2D Random Walks)")
+plt.grid(True)
+plt.legend()
+plt.show()
+
+# --- Plot 2: Log-log plot + slope fit ---
+log_t = np.log(time[1:])  # Skip t = 0
+log_disp = np.log(avg_displacement[1:])
+
+slope, intercept = np.polyfit(log_t, log_disp, 1)
+
+plt.figure(figsize=(8, 5))
+plt.plot(log_t, log_disp, label='log(⟨σ⟩)')
+plt.plot(log_t, slope * log_t + intercept, 'r--', label=f'Fit: slope ≈ {slope:.3f}')
+plt.xlabel("log(Time)")
+plt.ylabel("log(⟨σ⟩)")
+plt.title("Log-Log Plot of Average Displacement")
+plt.grid(True)
+plt.legend()
+plt.show()
+
+print(f"Fitted slope: {slope:.4f}")
+
+
+
+----------------------------------------------------------------------------------------------------
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from IPython.display import HTML, display
+
+def Animate2D(walks2d):
+    walks2d = np.array(walks2d)  # shape: (num_walkers, 2, num_steps)
+    n_walkers, _, n_steps = walks2d.shape
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+
+    # Set axis limits based on max displacement
+    max_val = np.max(np.abs(walks2d))
+    ax.set_xlim(-max_val * 1.1, max_val * 1.1)
+    ax.set_ylim(-max_val * 1.1, max_val * 1.1)
+    ax.set_title("2D Random Walk Animation")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.grid(True)
+
+    # Random color for each walker
+    colors = np.random.rand(n_walkers, 3)
+
+    # Scatter object for walkers
+    scatters = ax.scatter([], [], s=20)
+
+    def init():
+        scatters.set_offsets(np.zeros((n_walkers, 2)))
+        scatters.set_color(colors)
+        return [scatters]
+
+    def animate(i):
+        xs = walks2d[:, 0, i]
+        ys = walks2d[:, 1, i]
+        offsets = np.column_stack((xs, ys))
+        scatters.set_offsets(offsets)
+        return [scatters]
+
+    ani = animation.FuncAnimation(fig, animate, init_func=init, frames=n_steps,
+                                  interval=10, blit=True, repeat=False)
+    display(HTML(ani.to_jshtml()))
+    plt.close()
+
+  # Generate 100 2D random walks of 500 steps
+num_walkers = 100
+num_steps = 500
+sigma = 6
+
+steps_x = sigma * np.random.randn(num_walkers, num_steps)
+steps_y = sigma * np.random.randn(num_walkers, num_steps)
+
+walks_x = np.cumsum(steps_x, axis=1)
+walks_y = np.cumsum(steps_y, axis=1)
+
+# Add origin (x=0, y=0) at t=0
+walks_x = np.hstack((np.zeros((num_walkers, 1)), walks_x))
+walks_y = np.hstack((np.zeros((num_walkers, 1)), walks_y))
+
+# Stack into shape (n_walkers, 2, n_steps)
+walks2d = np.stack((walks_x, walks_y), axis=1)
+
+Animate2D(walks2d)
+
+----------------------------------------------------------------------------------------------------
+### Answer Here
+grid = np.zeros((104, 104), dtype=int)
+grid[52, 52] = 1  # center of the grid (with padding)
+
+directions = {
+    0: np.array([-1, 0]),  # up
+    1: np.array([1, 0]),   # down
+    2: np.array([0, -1]),  # left
+    3: np.array([0, 1])    # right
+}
+
+for i in range(1000):
+    # Spawn on a random side
+    side = np.random.choice([0, 1, 2, 3])
+    pos = np.random.randint(2, 102)
+    if side == 0:
+        particle = np.array([2, pos])
+    elif side == 1:
+        particle = np.array([101, pos])
+    elif side == 2:
+        particle = np.array([pos, 2])
+    else:
+        particle = np.array([pos, 101])
+
+    while True:
+        # Random move
+        move = directions[np.random.randint(4)]
+        new_pos = particle + move
+
+        # Check if within bounds
+        if 2 <= new_pos[0] < 102 and 2 <= new_pos[1] < 102:
+            particle = new_pos
+
+        # Check neighbors (up, down, left, right)
+        neighbors = [
+            (particle[0] - 1, particle[1]),
+            (particle[0] + 1, particle[1]),
+            (particle[0], particle[1] - 1),
+            (particle[0], particle[1] + 1)
+        ]
+        if any(grid[x, y] == 1 for x, y in neighbors):
+            grid[particle[0], particle[1]] = 1
+            break
+
+----------------------------------------------------------------------------------------------------
+### Answer Here
+def DLA_surface(grid_size=100, num_particles=1000):
+    grid = np.zeros((grid_size, grid_size), dtype=int)
+    
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  
+
+    for _ in range(num_particles):
+        # Start at the top row, random column
+        x, y = 0, np.random.randint(1, grid_size - 1)
+
+        while True:
+            # Check if it's adjacent to something stuck or bottom
+            stuck = False
+            if x == grid_size - 1:  
+                stuck = True
+            else:
+                for dx, dy in directions:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < grid_size and 0 <= ny < grid_size:
+                        if grid[nx, ny] == 1:
+                            stuck = True
+                            break
+
+            if stuck:
+                grid[x, y] = 1
+                break
+
+            # Random move 
+            dx, dy = directions[np.random.randint(4)]
+            new_x, new_y = x + dx, y + dy
+
+            if 0 <= new_x < grid_size and 0 <= new_y < grid_size:
+                x, y = new_x, new_y
+
+    # Plotting the result
+    plt.figure(figsize=(6, 6))
+    plt.matshow(grid, fignum=0, cmap='inferno', origin='lower')
+    plt.title("DLA Onto a Surface (MBE-style)")
+    plt.axis('off')
+    plt.show()
+
+# Run it
+DLA_surface(grid_size=100, num_particles=1000)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### Answer Here
+# Parameters
+num_walks = 10000
+num_steps = 100
+step_size = 6
+
+# Discrete Walk
+steps_discrete = np.random.choice([-step_size, step_size], size=(num_walks, num_steps))
+locs_discrete = np.cumsum(steps_discrete, axis=1)
+locs_discrete = np.hstack((np.zeros((num_walks, 1)), locs_discrete))  # add x0 = 0
+
+# Gaussian Walk N(0, sigma^2)
+steps_gaussian = step_size * np.random.randn(num_walks, num_steps)
+locs = np.cumsum(steps_gaussian, axis=1)
+locs = np.hstack((np.zeros((num_walks, 1)), locs))  # add x0 = 0
+
+
+plt.figure(figsize=(8, 4))
+plt.hist(locs_discrete[:, 2], bins=10, alpha=0.7, label='Discrete Steps (±6)')
+plt.hist(locs[:, 2], bins=10, alpha=0.3, label='Gaussian Steps (σ=6)')
+plt.title("Histogram After 2 Steps")
+plt.xlabel("Position")
+plt.ylabel("Frequency")
+plt.legend()
+plt.grid(True)
+plt.show()
+plt.figure(figsize=(8, 4))
+plt.hist(locs_discrete[:, 100], bins=50, alpha=0.7, label='Discrete Steps (±6)')
+plt.hist(locs[:, 100], bins=50, alpha=0.3, label='Gaussian Steps (σ=6)')
+plt.title("Histogram After 100 Steps")
+plt.xlabel("Position")
+plt.ylabel("Frequency")
+plt.legend()
+plt.grid(True)
+plt.show()
+----------------------------------------------------------------------------------------------------
+# Parameters
+num_walkers = 2000
+num_steps = 1000
+step_size = 1 
+
+
+directions = np.array([[1, 0], [-1, 0], [0, 1], [0, -1]])
+steps_discrete = directions[np.random.randint(0, 4, size=(num_walkers, num_steps))]
+pos_discrete = np.sum(steps_discrete, axis=1)  # final (x, y)
+
+steps_gaussian = np.random.randn(num_walkers, num_steps, 2) * step_size
+pos_gaussian = np.sum(steps_gaussian, axis=1)
+plt.figure(figsize=(6, 6))
+plt.scatter(pos_discrete[:, 0], pos_discrete[:, 1], s=2, alpha=0.5)
+plt.title("Final Positions of Discrete 2D Walkers (t=1000)")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.axis('equal')
+plt.grid(True)
+plt.show()
+plt.figure(figsize=(6, 6))
+plt.scatter(pos_gaussian[:, 0], pos_gaussian[:, 1], s=2, alpha=0.5, color='orange')
+plt.title("Final Positions of Gaussian 2D Walkers (t=1000)")
+plt.xlabel("x")
+plt.ylabel("y")
+plt.axis('equal')
+plt.grid(True)
+plt.show()
+               
