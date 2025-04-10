@@ -1,0 +1,142 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from dataclasses import dataclass, field
+from IPython.display import HTML
+import random
+
+# --- PARAMETERS ---
+size = 50           # Grid size (size x size)
+T = 600             # Number of timesteps
+deltat = 0.1
+cure_time = 5.0
+infect_prob = 1.0
+death_prob = 0.30
+initial_infection_chance = 0.02
+initial_population_density = 0.2
+
+# --- PERSON CLASS ---
+@dataclass
+class Person:
+    location: list = field(default_factory=list)
+    infected: bool = False
+    cured: bool = False
+    dead: bool = False
+    infected_time: float = 0.0
+
+# --- INITIALIZATION ---
+grid = np.zeros((size, size), dtype=int)  # 0: empty, 1: healthy, 2: infected, 3: cured, 4: dead
+people = []
+
+for i in range(size):
+    for j in range(size):
+        if np.random.rand() < initial_population_density:
+            person = Person([i, j])
+            if np.random.rand() < initial_infection_chance:
+                person.infected = True
+                grid[i, j] = 2
+            else:
+                grid[i, j] = 1
+            people.append(person)
+
+# --- MOVEMENT FUNCTION ---
+def move(loc, grid):
+    neighbors = [
+        (loc[0] + dx, loc[1] + dy)
+        for dx, dy in [(-1,0),(1,0),(0,-1),(0,1)]
+        if 0 <= loc[0]+dx < size and 0 <= loc[1]+dy < size
+    ]
+    random.shuffle(neighbors)
+    for ni, nj in neighbors:
+        if grid[ni, nj] == 0:
+            return [ni, nj]
+    return loc
+
+# --- INFECTION FUNCTION ---
+def infect_neighbors(loc, grid, people):
+    for dx, dy in [(-1,0),(1,0),(0,-1),(0,1)]:
+        ni, nj = loc[0]+dx, loc[1]+dy
+        if 0 <= ni < size and 0 <= nj < size:
+            if grid[ni, nj] == 1 and np.random.rand() < infect_prob:
+                grid[ni, nj] = 2
+                for p in people:
+                    if p.location == [ni, nj]:
+                        p.infected = True
+
+# --- SIMULATION LOOP ---
+grids = []
+labels = []
+t = 0
+
+while t < T:
+    new_grid = np.copy(grid)
+    for person in people:
+        if person.dead:
+            continue
+
+        # Move
+        old_loc = person.location
+        new_loc = move(old_loc, grid)
+        person.location = new_loc
+
+        if old_loc != new_loc:
+            new_grid[old_loc[0], old_loc[1]] = 0
+            new_grid[new_loc[0], new_loc[1]] = grid[old_loc[0], old_loc[1]]
+
+        # Infection logic
+        if person.infected:
+            person.infected_time += deltat
+            infect_neighbors(person.location, new_grid, people)
+            if person.infected_time > cure_time:
+                if np.random.rand() < death_prob:
+                    person.dead = True
+                    person.infected = False
+                    new_grid[person.location[0], person.location[1]] = 4
+                else:
+                    person.infected = False
+                    person.cured = True
+                    new_grid[person.location[0], person.location[1]] = 3
+
+    grid = new_grid
+    if t % 5 == 0:
+        grids.append(np.copy(grid))
+        counts = {
+            'Healthy': np.sum(grid == 1),
+            'Infected': np.sum(grid == 2),
+            'Cured': np.sum(grid == 3),
+            'Dead': np.sum(grid == 4)
+        }
+        labels.append(counts)
+    t += 1
+
+# --- ANIMATION FUNCTION ---
+def GetData(t):
+    g = grids[t]
+    data = np.zeros_like(g, dtype=float)
+    data[g == 1] = 0.2  # healthy: light blue
+    data[g == 2] = 1.0  # infected: red
+    data[g == 3] = 0.6  # cured: green
+    data[g == 4] = 0.1  # dead: gray
+    return data
+
+def Animate():
+    fig, ax = plt.subplots(figsize=(6, 6))
+    plot = ax.imshow(GetData(0), cmap='coolwarm', interpolation='none', vmin=0, vmax=1)
+    label_text = ax.text(0.02, 0.98, '', color='black', fontsize=10,
+                         verticalalignment='top', transform=ax.transAxes,
+                         bbox=dict(facecolor='white', alpha=0.8))
+    plt.axis('off')
+
+    def update(frame):
+        plot.set_array(GetData(frame))
+        counts = labels[frame]
+        label_text.set_text(
+            f"Healthy: {counts['Healthy']}\nInfected: {counts['Infected']}\nCured: {counts['Cured']}\nDead: {counts['Dead']}")
+        return [plot, label_text]
+
+    anim = FuncAnimation(fig, update, frames=len(grids), interval=100, blit=True)
+    plt.close()
+    return anim
+
+anim = Animate()
+HTML(anim.to_jshtml())
