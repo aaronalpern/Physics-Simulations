@@ -1,4 +1,4 @@
-# Computational Physics Code
+# Computational Physics Code Physics 246 
 Coding different physics simulations and models
 1) Calculating Pi -- Different ways to estimate the values of pi using geometry and monte carlo simulations
 2) Dynamics -- Different integrators developed to estimate simple Newtonian Mechanics
